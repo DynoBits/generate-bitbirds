@@ -1,12 +1,14 @@
-# BitBirds generation script
+# DynoBits generation script
 # Intro
-This is published under MIT license, which means you can do whatever you want with it - entirely at your own risk.
+This project was forked from the original BitBirds project by nft-fun. This is the original intro
 
-Please don't be an asshole. This is, like, grassroots and stuff. 
-
-Specifically I'm asking you in good faith not to directly knock off the BitBirds project, or otherwise screw me over for sharing this. Do not use this for anything hateful or discriminatory.
-
-There is a YouTube video walkthrough to complement this ReadMe [...Link...](https://youtu.be/vTxjLLHncMo).
+> This is published under MIT license, which means you can do whatever you want with it - entirely at your own risk.
+> 
+> Please don't be an asshole. This is, like, grassroots and stuff. 
+> 
+> Specifically I'm asking you in good faith not to directly knock off the BitBirds project, or otherwise screw me over for sharing this. Do not use this > for anything hateful or discriminatory.
+> 
+> There is a YouTube video walkthrough to complement this ReadMe [...Link...](https://youtu.be/vTxjLLHncMo).
 
 # Setting the expectations
 If you're new to programming you may struggle to set up the dependencies. If you're persistent, you can do it! I believe in you. 
