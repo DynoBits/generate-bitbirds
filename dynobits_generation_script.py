@@ -22,12 +22,11 @@ cwd = os.getcwd()
 dimensions = 480, 480
 
 # COUNTS FOR TRACKING RESULTS
-count_al_type = [0, 0, 0, 0] # Grey, Gold, Red, Black/White
+count_al_color = [0, 0, 0, 0, 0] # Grey, Gold, Red, White, Black
 count_dyno_type = [0, 0, 0] # Euoplocephalus, T-Tex, Euoplorex
-count_eb_type = [0, 0, 0] # mad, happy, neutral
+count_emotion = [0, 0, 0] # mad, happy, neutral
 count_nocturnal = 0
-count_crazy_eye = 0
-count_crazy_eyebrow = 0
+count_eye_mutation = 0
 count_mismatch_spikes = 0
 count_mismatch_dots = 0
 
@@ -42,10 +41,6 @@ def feed_dyno():
 def random_color():
     '''generates random color rgb between (0, 0, 0) and (255, 255, 255) inclusive'''
     feed_dyno()
-    c = (randint(0, 255), randint(0, 255), randint(0, 255))
-    for n in c:
-        if n > 255:
-            raise("THIS IS WRONG")
     return (randint(0, 255), randint(0, 255), randint(0, 255))
 
 
@@ -60,12 +55,14 @@ def lighter(color):
 dyno_count = 1000 # number of dynos to create
 for dyno_number in range(dyno_count):
 
-    has_mismatch_spikes = False
-    has_mismatch_dots = False
+    is_nocturnal = feed_dyno() % 2 # 50% chance dyno is nocturnal (night-mode)
+    has_eye_mutation = feed_dyno() < 100 # 10% chance of eye mutation
+    has_mismatch_spikes = feed_dyno() < 150 # 15% chance of mismatch spikes
+    has_mismatch_dots = feed_dyno() < 150 # 15% chance of mismatch dots
 
     # using ETH block number as starting random number seed
     b = 11981207
-    seed(dyno_number + b)
+    seed(b + dyno_number)
 
     # Background color
     bg = (238, 238, 238)
@@ -73,69 +70,66 @@ for dyno_number in range(dyno_count):
     # Outline color
     ol = (0, 0, 0)
 
+    if is_nocturnal: 
+        bg,ol = ol,bg
+        count_nocturnal += 1
+
+    # Eyebrow
+    eb = (0, 0, 0)
+
     # Skin color
     sk = random_color()
 
     # Horn color
     hn = random_color()
 
-    # ----- ARMS & LEGS -----
+    '''----- ARMS & LEGS -----'''
+    # TODO: higher chance of black/white so there are more of them
     al_type = feed_dyno()
 
     if al_type > 500:
         # 50% chance of grey arms and legs
         al = (152, 152, 152)
-        count_al_type[0] +=1
+        count_al_color[0] += 1
     elif al_type > 50:
         # 45% chance of gold arms and legs
         al = (204, 172, 0)
-        count_al_type[1] +=1
+        count_al_color[1] += 1
     elif al_type > 10:
         # 4% chance of red arms and legs
         al = (204, 0, 0)
-        count_al_type[2] +=1
+        count_al_color[2] += 1
     else:
-        # 1% chance of black(daytime)/white(nighttime) arms and legs
-        al = (0, 0, 0)
-        count_al_type[3] +=1
-        print("black/white arms and legs: ", dyno_number)
+        # 1% chance of black/white arms and legs
+        al = ol
+        if is_nocturnal: # White arms if nocturnal
+            count_al_color[3] += 1
+        else: # Black arms if diurnal
+            count_al_color[4] += 1
     
     '''----- EYES -----'''
-    if feed_dyno() > 100:
-        # Sclera color - the white part of eye
-        sc = (240,248,255)
-        # Pupil color - the black part of eye
-        pu = (0, 0, 0)
-    else: # 10% chance of crazy eyes
+    if has_eye_mutation:
+        # Sclera color - the "white" part of eye
         sc = random_color()
+        # Pupil color - the black part of eye
         pu = (154, 0, 0)
-        count_crazy_eye += 1
-
-    '''----- EYEBROWS -----'''
-    if feed_dyno() > 10:
-        # Eyebrow
-        eb = (0, 0, 0)
-    else: # 1% chance of eyebrow color mutation
-        eb = random_color()
-        count_crazy_eyebrow += 1
-        print("eyebrow color mutation: ", dyno_number)
+        count_eye_mutation += 1
+    else: 
+        sc = (240,248,255)
+        pu = (0, 0, 0)
 
     '''----- SPIKES & TAIL -----'''
-    if feed_dyno() > 150: # 4 total spikes & 1 tail
-        s1 = s2 = s3 = s4 = tl = random_color()
-    else: # 15% chance of mismatch spikes
+    if has_mismatch_spikes: # 4 total spikes & 1 tail
         s1 = random_color()
         s2 = random_color()
         s3 = random_color()
         s4 = random_color()
         tl = random_color()
-        has_mismatch_spikes = True
+    else: 
+        s1 = s2 = s3 = s4 = tl = random_color()
 
     '''----- DOTS -----'''
-    if feed_dyno() > 150: # 5 total with inner and outer
-        i1 = i2 = i3 = i4 = i5 = random_color()
-        o1 = o2 = o3 = o4 = o5 = lighter(i1)
-    else: # 15% chance of mismatch dots
+    if has_mismatch_dots: # 5 total with inner and outer
         i1 = random_color()
         o1 = lighter(i1)
         i2 = random_color()
@@ -146,15 +140,10 @@ for dyno_number in range(dyno_count):
         o4 = lighter(i4)
         i5 = random_color()
         o5 = lighter(i5)
-        has_mismatch_dots = True
+    else: 
+        i1 = i2 = i3 = i4 = i5 = random_color()
+        o1 = o2 = o3 = o4 = o5 = lighter(i1)
 
-    # 50% chance dyno is nocturnal (night-mode)
-    if feed_dyno() % 2: 
-        bg,ol,sc,pu = pu,sc,ol,bg
-        # if black arms and legs, they turn white at night
-        if al == (0, 0, 0): al = (238, 238, 238) 
-        count_nocturnal += 1
-    
 
     # Define pixel arrays for each dyno body
     euoplocephalus = np.array([
@@ -216,15 +205,15 @@ for dyno_number in range(dyno_count):
         [bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg],
         [bg, bg, bg, bg, bg, bg, hn, bg, bg, bg, hn, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg, bg],
         [bg, bg, bg, bg, bg, ol, ol, ol, ol, ol, hn, hn, ol, ol, ol, bg, bg, bg, bg, bg, bg, bg, bg, bg],
-        [bg, bg, bg, ol, ol, sk, sk, sk, sk, sk, hn, hn, sk, sk, sk, ol, bg, bg, bg, bg, bg, bg, bg, bg],
+        [bg, bg, bg, ol, ol, sk, sk, sk, sk, sk, hn, hn, o1, o1, o1, ol, bg, bg, bg, bg, bg, bg, bg, bg],
         [bg, bg, ol, sk, sk, sk, sk, sk, sk, sk, hn, hn, hn, sk, sk, sk, ol, s1, bg, bg, bg, bg, bg, bg],
-        [bg, bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, o2, ol, s1, s1, bg, bg, bg, bg, bg],
-        [bg, bg, ol, sk, sk, sk, sc, sc, sk, sk, sk, sk, sk, sk, o2, i2, ol, s1, bg, bg, bg, bg, bg, bg],
-        [bg, bg, ol, sk, sk, sk, pu, sc, sk, sk, sk, sk, sk, sk, o2, i2, ol, bg, bg, bg, bg, bg, bg, bg],
-        [bg, bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, o2, ol, s2, bg, bg, bg, bg, bg, bg],
-        [bg, bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, ol, s2, s2, bg, bg, bg, bg, bg],
-        [bg, bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, o3, ol, s2, bg, bg, bg, bg, bg, bg],
-        [bg, bg, bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, o3, i3, ol, bg, bg, bg, bg, bg, bg, bg],
+        [bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, o2, ol, s1, s1, bg, bg, bg, bg, bg],
+        [bg, ol, sk, sk, sk, sk, sc, sc, sk, sk, sk, sk, sk, sk, o2, i2, ol, s1, bg, bg, bg, bg, bg, bg],
+        [bg, ol, sk, sk, sk, sk, pu, sc, sk, sk, sk, sk, sk, sk, o2, i2, ol, bg, bg, bg, bg, bg, bg, bg],
+        [bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, o2, ol, s2, bg, bg, bg, bg, bg, bg],
+        [bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, ol, s2, s2, bg, bg, bg, bg, bg],
+        [bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, o3, ol, s2, bg, bg, bg, bg, bg, bg],
+        [bg, bg, ol, ol, sk, sk, sk, sk, sk, sk, sk, sk, sk, sk, o3, i3, ol, bg, bg, bg, bg, bg, bg, bg],
         [bg, bg, bg, bg, ol, ol, ol, ol, sk, sk, sk, sk, sk, sk, o3, i3, ol, s3, bg, bg, bg, bg, bg, bg],
         [bg, bg, bg, bg, bg, bg, ol, sk, sk, sk, sk, sk, sk, sk, sk, o3, ol, s3, s3, bg, bg, bg, bg, bg],
         [bg, bg, bg, bg, bg, al, ol, o5, sk, sk, sk, al, al, sk, sk, sk, ol, s3, bg, bg, bg, bg, bg, bg],
@@ -243,7 +232,7 @@ for dyno_number in range(dyno_count):
     '''----- Dyno type -----'''
     dyno_type = feed_dyno()
 
-    if dyno_type > 444: # 66.6% chance of Euoplocephalus
+    if dyno_type > 444: # 55.5% chance of Euoplocephalus
         dyno_pixels = euoplocephalus
         count_dyno_type[0] += 1
         if has_mismatch_spikes: count_mismatch_spikes += 1
@@ -257,22 +246,22 @@ for dyno_number in range(dyno_count):
         if has_mismatch_spikes: count_mismatch_spikes += 1
         if has_mismatch_dots: count_mismatch_dots += 1
 
-    '''----- Eyebrow type -----'''
-    eb_type = feed_dyno()
 
-    if eb_type > 666: # 33% chance of mad eyebrows
+
+    '''----- Emotion -----'''
+    emotion = feed_dyno() % 3 # 33% chance of each emotion
+
+    if emotion == 0: # 33% chance of mad eyebrows
         eb_rows = [4, 5]
         eb_cols = [6, 5]
-        count_eb_type[0] += 1
-    elif eb_type > 333: # 33% chance of happy eyebrows
+    elif emotion == 1: # 33% chance of happy eyebrows
         eb_rows = [4, 5]
         eb_cols = [7, 8]
-        count_eb_type[1] += 1
     else: # 33% chance of neutral eyebrows
         eb_rows = [4, 4]
         eb_cols = [6, 7]
-        count_eb_type[2] += 1
 
+    count_emotion[emotion] += 1
     dyno_pixels[eb_rows, eb_cols] = eb
 
     ''' 
@@ -296,10 +285,11 @@ Displays counts and percentages of each dyno attribute to console
 print("-------------------------- DYNO RESULTS --------------------------")
 
 print(f"\nARAMS & LEGS" + 
-    f"\n\tGrey({count_al_type[0]}): {round( count_al_type[0]/dyno_count*100 )} %" + 
-    f"\n\tGold({count_al_type[1]}): {round( count_al_type[1]/dyno_count*100 )} %" + 
-    f"\n\tRed({count_al_type[2]}): {round( count_al_type[2]/dyno_count*100 )} %" + 
-    f"\n\tBlack/White({count_al_type[3]}): {round( count_al_type[3]/dyno_count*100 )} %"
+    f"\n\tGrey({count_al_color[0]}): {round( count_al_color[0]/dyno_count*100 )} %" + 
+    f"\n\tGold({count_al_color[1]}): {round( count_al_color[1]/dyno_count*100 )} %" + 
+    f"\n\tRed({count_al_color[2]}): {round( count_al_color[2]/dyno_count*100 )} %" + 
+    f"\n\tWhite({count_al_color[3]}): {round( count_al_color[3]/dyno_count*100 )} %" + 
+    f"\n\tBlack({count_al_color[4]}): {round( count_al_color[4]/dyno_count*100 )} %"
     )
 
 print(f"\nDYNO TYPE" + 
@@ -309,18 +299,15 @@ print(f"\nDYNO TYPE" +
     )
 
 print(f"\nEYEBROW TYPE" + 
-    f"\n\tMad({count_eb_type[0]}): {round( count_eb_type[0]/dyno_count*100 )} %" + 
-    f"\n\tHappy({count_eb_type[1]}): {round( count_eb_type[1]/dyno_count*100 )} %" + 
-    f"\n\tNeutral({count_eb_type[2]}): {round( count_eb_type[2]/dyno_count*100 )} %"
+    f"\n\tMad({count_emotion[0]}): {round( count_emotion[0]/dyno_count*100 )} %" + 
+    f"\n\tHappy({count_emotion[1]}): {round( count_emotion[1]/dyno_count*100 )} %" + 
+    f"\n\tNeutral({count_emotion[2]}): {round( count_emotion[2]/dyno_count*100 )} %"
     )
 
 print(f"\nNOCTURNAL({count_nocturnal}): {round( count_nocturnal/dyno_count*100 )} %")
 
-print(f"\nCRAZY EYE({count_crazy_eye}): {round( count_crazy_eye/dyno_count*100 )} %")
-
-print(f"\nCRAZY EYEBROW({count_crazy_eyebrow}): {round( count_crazy_eyebrow/dyno_count*100 )} %")
+print(f"\nEYE MUTATION({count_eye_mutation}): {round( count_eye_mutation/dyno_count*100 )} %")
 
 print(f"\nMISMATCH SPIKES({count_mismatch_spikes}): {round( count_mismatch_spikes/dyno_count*100 )} %")
 
 print(f"\nMISMATCH DOTS({count_mismatch_dots}): {round( count_mismatch_dots/dyno_count*100 )} %")
-
